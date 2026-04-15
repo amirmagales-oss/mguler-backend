@@ -1,0 +1,55 @@
+generator client {
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "debian-openssl-3.0.x"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  admin
+  manager
+  operator
+  viewer
+}
+
+model User {
+  id                 String        @id @default(uuid()) @db.Uuid
+  username           String        @unique
+  fullName           String        @map("full_name")
+  passwordHash       String        @map("password_hash")
+  role               UserRole
+  isActive           Boolean       @default(true) @map("is_active")
+  mustChangePassword Boolean       @default(false) @map("must_change_password")
+  lastLoginAt        DateTime?     @map("last_login_at") @db.Timestamptz(6)
+  failedLoginCount   Int           @default(0) @map("failed_login_count")
+  createdAt          DateTime      @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt          DateTime      @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  sessions           UserSession[]
+
+  @@index([isActive])
+  @@index([role])
+  @@map("users")
+}
+
+model UserSession {
+  id               String    @id @default(uuid()) @db.Uuid
+  userId           String    @map("user_id") @db.Uuid
+  refreshTokenHash String    @map("refresh_token_hash")
+  userAgent        String?   @map("user_agent")
+  ipAddress        String?   @map("ip_address")
+  isActive         Boolean   @default(true) @map("is_active")
+  expiresAt        DateTime  @map("expires_at") @db.Timestamptz(6)
+  createdAt        DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt        DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  user             User      @relation(fields: [userId], references: [id], onDelete: Restrict)
+
+  @@index([userId])
+  @@index([isActive])
+  @@index([expiresAt])
+  @@map("user_sessions")
+}
