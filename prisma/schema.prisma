@@ -1,6 +1,5 @@
 generator client {
-  provider      = "prisma-client-js"
-  binaryTargets = ["native", "debian-openssl-3.0.x"]
+  provider = "prisma-client-js"
 }
 
 datasource db {
@@ -9,47 +8,107 @@ datasource db {
 }
 
 enum UserRole {
-  admin
-  manager
-  operator
-  viewer
+  SUPER_ADMIN
+  ADMIN
+  OPERATOR
+  VIEWER
+}
+
+enum MovementType {
+  IN
+  OUT
+  TRANSFER
+  ADJUSTMENT
+  RETURN
+  DAMAGE
 }
 
 model User {
-  id                 String        @id @default(uuid()) @db.Uuid
-  username           String        @unique
-  fullName           String        @map("full_name")
-  passwordHash       String        @map("password_hash")
-  role               UserRole
-  isActive           Boolean       @default(true) @map("is_active")
-  mustChangePassword Boolean       @default(false) @map("must_change_password")
-  lastLoginAt        DateTime?     @map("last_login_at") @db.Timestamptz(6)
-  failedLoginCount   Int           @default(0) @map("failed_login_count")
-  createdAt          DateTime      @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt          DateTime      @updatedAt @map("updated_at") @db.Timestamptz(6)
-
-  sessions           UserSession[]
-
-  @@index([isActive])
-  @@index([role])
-  @@map("users")
+  id           String      @id @default(uuid())
+  fullName     String
+  username     String      @unique
+  email        String?     @unique
+  passwordHash String
+  role         UserRole
+  isActive     Boolean     @default(true)
+  lastLoginAt  DateTime?
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+  movements    StockMovement[] @relation("MovementCreator")
+  logs         SystemLog[]
 }
 
-model UserSession {
-  id               String    @id @default(uuid()) @db.Uuid
-  userId           String    @map("user_id") @db.Uuid
-  refreshTokenHash String    @map("refresh_token_hash")
-  userAgent        String?   @map("user_agent")
-  ipAddress        String?   @map("ip_address")
-  isActive         Boolean   @default(true) @map("is_active")
-  expiresAt        DateTime  @map("expires_at") @db.Timestamptz(6)
-  createdAt        DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt        DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
+model Product {
+  id            String          @id @default(uuid())
+  sku           String          @unique
+  barcode       String?         @unique
+  name          String
+  category      String?
+  brand         String?
+  unit          String
+  minStockLevel Int             @default(0)
+  description   String?
+  isActive      Boolean         @default(true)
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+  currentStocks CurrentStock[]
+  movements     StockMovement[]
+}
 
-  user             User      @relation(fields: [userId], references: [id], onDelete: Restrict)
+model Warehouse {
+  id            String          @id @default(uuid())
+  code          String          @unique
+  name          String
+  description   String?
+  isActive      Boolean         @default(true)
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+  currentStocks CurrentStock[]
+  sourceMovements StockMovement[] @relation("SourceWarehouse")
+  targetMovements StockMovement[] @relation("TargetWarehouse")
+}
 
-  @@index([userId])
-  @@index([isActive])
-  @@index([expiresAt])
-  @@map("user_sessions")
+model CurrentStock {
+  id          String    @id @default(uuid())
+  productId   String
+  warehouseId String
+  quantity    Int       @default(0)
+  updatedAt   DateTime  @updatedAt
+
+  product     Product   @relation(fields: [productId], references: [id], onDelete: Cascade)
+  warehouse   Warehouse @relation(fields: [warehouseId], references: [id], onDelete: Cascade)
+
+  @@unique([productId, warehouseId])
+}
+
+model StockMovement {
+  id                String       @id @default(uuid())
+  movementNo        String       @unique
+  movementType      MovementType
+  productId         String
+  sourceWarehouseId String?
+  targetWarehouseId String?
+  quantity          Int
+  note              String?
+  referenceNo       String?
+  createdById       String
+  groupKey          String?
+  createdAt         DateTime     @default(now())
+
+  product           Product      @relation(fields: [productId], references: [id], onDelete: Restrict)
+  sourceWarehouse   Warehouse?   @relation("SourceWarehouse", fields: [sourceWarehouseId], references: [id], onDelete: Restrict)
+  targetWarehouse   Warehouse?   @relation("TargetWarehouse", fields: [targetWarehouseId], references: [id], onDelete: Restrict)
+  createdBy         User         @relation("MovementCreator", fields: [createdById], references: [id], onDelete: Restrict)
+}
+
+model SystemLog {
+  id          String   @id @default(uuid())
+  userId      String?
+  actionType  String
+  module      String
+  description String
+  metadata    Json?
+  createdAt   DateTime @default(now())
+
+  user        User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
 }
