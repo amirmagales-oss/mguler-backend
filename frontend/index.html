@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MGULER STOCK V1 PREMIUM</title>
+  <link rel="stylesheet" href="./styles.css" />
+</head>
+<body>
+  <div id="app">
+    <aside class="sidebar">
+      <div class="brand">MGULER STOCK</div>
+      <nav>
+        <button class="nav-btn active" data-view="dashboard">Dashboard</button>
+        <button class="nav-btn" data-view="products">Ürünler</button>
+        <button class="nav-btn" data-view="warehouses">Depolar</button>
+        <button class="nav-btn" data-view="stock">Mevcut Stok</button>
+        <button class="nav-btn" data-view="movements">Hareketler</button>
+        <button class="nav-btn" data-view="logs">Loglar</button>
+      </nav>
+    </aside>
+
+    <main class="content">
+      <header class="topbar">
+        <div>
+          <h1>V1 PREMIUM Panel</h1>
+          <p>Temel yönetim ve stok operasyon ekranı</p>
+        </div>
+        <div class="topbar-actions">
+          <input id="apiBase" placeholder="API URL örn: http://localhost:3000" />
+          <button id="saveApi">API Kaydet</button>
+          <button id="logoutBtn">Çıkış</button>
+        </div>
+      </header>
+
+      <section id="loginCard" class="card login-card">
+        <h2>Giriş Yap</h2>
+        <div class="grid two">
+          <input id="username" placeholder="Kullanıcı adı" value="UMG" />
+          <input id="password" type="password" placeholder="Şifre" value="UMG2026!" />
+        </div>
+        <button id="loginBtn">Giriş</button>
+        <p class="hint">Varsayılan kullanıcı: UMG / UMG2026!</p>
+        <div id="loginMessage" class="message"></div>
+      </section>
+
+      <section id="view-dashboard" class="view"></section>
+      <section id="view-products" class="view hidden"></section>
+      <section id="view-warehouses" class="view hidden"></section>
+      <section id="view-stock" class="view hidden"></section>
+      <section id="view-movements" class="view hidden"></section>
+      <section id="view-logs" class="view hidden"></section>
+    </main>
+  </div>
+  <script src="./app.js"></script>
+</body>
+</html>
